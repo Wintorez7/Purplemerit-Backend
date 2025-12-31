@@ -90,7 +90,6 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser };
 
 
 // login controller
@@ -98,9 +97,7 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // find if current user is exist in databas or not
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -111,7 +108,6 @@ const loginUser = async (req, res) => {
     if (user.status === "inactive")
       return res.status(403).json({ message: "Account is deactivated. Contact admin." });
 
-    // if password is correct or not
     const isPasswordisMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordisMatch) {
       return res.status(400).json({
@@ -120,24 +116,31 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // create user token
     const accessToken = jwt.sign(
       {
         id: user._id,
         fullname: user.fullname,
+        email: user.email,
         role: user.role,
       },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET, // FIXED ✔
       {
-        expiresIn: "1d",
+        expiresIn: "7d",
       }
     );
 
     res.status(200).json({
       success: true,
-      message: "Login Successfull",
+      message: "Login Successful",
+      user: {
+        id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        role: user.role,
+      },
       accessToken,
     });
+
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -146,6 +149,7 @@ const loginUser = async (req, res) => {
     });
   }
 };
+
 
 const getMe = (req, res) => {
   res.json(req.user);
