@@ -17,7 +17,7 @@ const authRoutes = require('./routes/authRoutes.js')
 const homeRoutes = require('./routes/home-routes.js')
 const adminRoutes = require('./routes/admin-routes.js')
 const userRoutes = require("./routes/userRoutes")
-
+const passwordRoutes = require("./routes/passwordRoutes");
 // database
 connectToDb();
 
@@ -25,6 +25,7 @@ app.use('/api/auth',authRoutes)
 app.use('/api/home',homeRoutes)
 app.use('/api/admin',adminRoutes)
 app.use("/api/users",userRoutes);
+app.use("/api/password", passwordRoutes);
  
 
 

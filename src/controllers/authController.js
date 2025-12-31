@@ -2,13 +2,12 @@ const User = require("../models/user.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// register controller
+
 const registerUser = async (req, res) => {
   try {
-    //extract user infomration from our request body
     const { fullname, email, password, role } = req.body;
 
-    // Basic field validation
+    // 🔹 Basic field validation
     if (!fullname || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -16,7 +15,7 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // Email format validation
+    // 🔹 Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -25,55 +24,74 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // Password length validation
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters long.",
-      });
-    }
+    // 🔹 Password strength validation
+    // Minimum 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^])[A-Za-z\d@$!%*?&#^]{8,}$/;
 
-    // if the user is already exist or not in database
-    const CheckExistingUser = await User.findOne({email});
-    if (CheckExistingUser) {
+    if (!passwordRegex.test(password)) {
       return res.status(400).json({
         success: false,
         message:
-          "User Already Exist with this username or email! Please try with different email or username",
+          "Password must contain at least 8 characters, uppercase, lowercase, number & special character.",
       });
     }
-    // hash userpassword
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
 
-    // create a new user save in database
-    const NewlyCreatedUser = new User({
+    // 🔹 Check if email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already registered. Please login.",
+      });
+    }
+
+    // 🔹 Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 🔹 Create new user in DB
+    const user = await User.create({
       fullname,
       email,
       password: hashedPassword,
       role: role || "user",
     });
 
-    await NewlyCreatedUser.save();
-    if (NewlyCreatedUser) {
-      res.status(201).json({
-        success: true,
-        message: "User Register Succesfully",
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: "Unable to Register User! Please try again",
-      });
-    }
+    // 🔹 Generate JWT Token
+    const token = jwt.sign(
+      {
+        id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // 🔹 Return success response
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully!",
+      user: {
+        id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
+    console.log("Register Error:", error);
+    return res.status(500).json({
       success: false,
-      message: "Some error occured! Please Try again Later",
+      message: "Server error. Please try again later.",
     });
   }
 };
+
+module.exports = { registerUser };
+
 
 // login controller
 const loginUser = async (req, res) => {
