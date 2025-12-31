@@ -1,6 +1,6 @@
-const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const User = require("../models/user.js");
 
 const changePassword = async (req, res) => {
   try {
@@ -52,5 +52,28 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const getAllUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-module.exports = { changePassword, updateProfile };
+    const filter = { role: "user" }; // filter only "user" role
+
+    const totalUsers = await User.countDocuments(filter);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    const users = await User.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }); // latest first
+
+    res.json({ users, totalPages });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+module.exports = { changePassword, updateProfile ,getAllUsers};

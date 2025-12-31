@@ -26,7 +26,7 @@ app.use('/api/home',homeRoutes)
 app.use('/api/admin',adminRoutes)
 app.use("/api/users",userRoutes);
 app.use("/api/password", passwordRoutes);
- 
+app.use("/api/users", userRoutes);
 
 
 app.listen(PORT,() => {
