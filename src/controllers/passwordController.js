@@ -20,6 +20,7 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     await sendEmail(user.email, "Password Reset OTP", `Your OTP: ${otp}`);
+    console.log("OTP:", otp);
 
     res.json({ success: true, message: "OTP sent to email!" });
 
